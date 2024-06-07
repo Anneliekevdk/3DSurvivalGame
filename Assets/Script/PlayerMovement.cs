@@ -9,6 +9,12 @@ public class Plate : MonoBehaviour
     public float gravity = -9.81f * 2; //het is momenteel 2 omdat je anders in game langzaam valt, maar dat is gewoon voorkeur
     public float jumpHeight = 3f;
 
+    public float flySpeed = 5f;  // Speed while flying
+    public float flyGravity = -3f;  // Gravity while flying
+    public float doubleTapTime = 0.5f;  // Time interval for double-tap detection
+    float lastSpacePressTime;
+    bool isFlying = false;
+
     public Transform groundCheck;
     public float groundDistance = 0.4f;
     public LayerMask groundMask; // dit is voor het detecteren van de vloer of vloer mask
@@ -17,7 +23,6 @@ public class Plate : MonoBehaviour
 
     bool isGrounded; //is je poppentje op de grond
 
-    // Update is called once per frame
     void Update()
     {
         //checking if we hit the ground to reset our falling velocity, otherwise we will fall faster the next time
@@ -31,17 +36,50 @@ public class Plate : MonoBehaviour
         float x = Input.GetAxis("Horizontal");
         float z = Input.GetAxis("Vertical");
 
-        //right is the red Axis, foward is the blue axis
         Vector3 move = transform.right * x + transform.forward * z;
 
         controller.Move(move * speed * Time.deltaTime);
 
-        //check if the player is on the ground so he can jump
+
+
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            //the equation for jumping
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity); //dit berekend de jump.(moeilijk) hoef je niet te snappen wel leuk als ik het ooit snap
+            print("normal jump");
         }
+        else if (Input.GetButtonDown("Jump") && !isGrounded)
+        {
+            if (Time.time - lastSpacePressTime < doubleTapTime)
+            {
+                isFlying = true;  // Toggle flying mode
+                print("vliegen is true");
+            }
+            lastSpacePressTime = Time.time;
+        }
+
+
+        if (isFlying)
+        {
+            if (Input.GetButton("Jump"))
+            {
+                velocity.y = flySpeed;
+                print("velocify.y" + velocity.y);
+            }
+            else
+            {
+                velocity.y = flyGravity;
+                if (Input.GetButton("LeftControl"))
+                {
+                    velocity.y = flyGravity - 6f;
+                }
+            }
+            if (isGrounded)
+            {
+                isFlying = false;
+
+            }
+        }
+
 
         velocity.y += gravity * Time.deltaTime;
 
